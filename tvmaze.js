@@ -12775,23 +12775,23 @@ var $ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js"
 var $showsList = $("#showsList");
 var $episodesArea = $("#episodesArea");
 var $searchForm = $("#searchForm");
-var API_URL = "http://api.tvmaze.com/search";
+var API_URL = "http://api.tvmaze.com";
+var MISSING_IMG = "https://store-images.s-microsoft.com/image/apps.65316.13510798887490672.6e1ebb25-96c8-4504-b714-1f7cbca3c5ad.f9514a23-1eb8-4916-a18e-99b1a9817d15?mode=scale&q=90&h=300&w=300";
 function getShowsByTerm(term) {
     return __awaiter(this, void 0, void 0, function () {
         var resp, shows;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, axios_1.default.get(API_URL + "/shows?q=" + term)];
+                case 0: return [4 /*yield*/, axios_1.default.get(API_URL + "/search/shows?q=" + term)];
                 case 1:
                     resp = _a.sent();
-                    console.log(resp);
                     shows = resp.data.map(function (show) {
                         var _a;
                         return ({
                             id: show.show.id,
                             name: show.show.name,
                             summary: show.show.summary,
-                            image: (_a = show.show.image) === null || _a === void 0 ? void 0 : _a.original
+                            image: ((_a = show.show.image) === null || _a === void 0 ? void 0 : _a.original) || MISSING_IMG
                         });
                     });
                     return [2 /*return*/, shows];
@@ -12804,7 +12804,6 @@ function populateShows(shows) {
     $showsList.empty();
     for (var _i = 0, shows_1 = shows; _i < shows_1.length; _i++) {
         var show = shows_1[_i];
-        console.log(show);
         var $show = $("<div data-show-id=\"" + show.id + "\" class=\"Show col-md-12 col-lg-6 mb-4\">\n         <div class=\"media\">\n           <img\n              src=\"" + show.image + "\"\n              alt=\"Bletchly Circle San Francisco\"\n              class=\"w-25 mr-3\">\n           <div class=\"media-body\">\n             <h5 class=\"text-primary\">" + show.name + "</h5>\n             <div><small>" + show.summary + "</small></div>\n             <button class=\"btn btn-outline-light btn-sm Show-getEpisodes\">\n               Episodes\n             </button>\n           </div>\n         </div>\n       </div>\n      ");
         $showsList.append($show);
     }
@@ -12843,12 +12842,50 @@ $searchForm.on("submit", function (evt) {
         });
     });
 });
-/** Given a show ID, get from API and return (promise) array of episodes:
- *      { id, name, season, number }
- */
-// async function getEpisodesOfShow(id) { }
-/** Write a clear docstring for this function... */
-// function populateEpisodes(episodes) { }
+function getEpisodesOfShow(id) {
+    return __awaiter(this, void 0, void 0, function () {
+        var resp, episodes;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, axios_1.default.get(API_URL + "/shows/" + id + "/episodes")];
+                case 1:
+                    resp = _a.sent();
+                    episodes = resp.data.map(function (episode) {
+                        return ({ id: episode.id, name: episode.name, season: episode.season, number: episode.number });
+                    });
+                    return [2 /*return*/, episodes];
+            }
+        });
+    });
+}
+/** Given a list of episodes, create markup and append to DOM in #episodeArea */
+function populateEpisodes(episodes) {
+    $episodesArea.empty();
+    for (var _i = 0, episodes_1 = episodes; _i < episodes_1.length; _i++) {
+        var episode = episodes_1[_i];
+        console.log(episode);
+        var $episode = $("<li>\n          " + episode.name + " (season " + episode.season + ", episode " + episode.number + ")\n        </li>\n      ");
+        $episodesArea.append($episode);
+    }
+    $episodesArea.show();
+}
+function listEpisodes(evt) {
+    return __awaiter(this, void 0, void 0, function () {
+        var showId, episodes;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    showId = $(evt.target).closest(".Show").data("show-id");
+                    return [4 /*yield*/, getEpisodesOfShow(showId)];
+                case 1:
+                    episodes = _a.sent();
+                    populateEpisodes(episodes);
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+$showsList.on("click", ".Show-getEpisodes", listEpisodes);
 
 
 /***/ })
